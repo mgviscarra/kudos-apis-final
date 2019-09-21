@@ -7,4 +7,5 @@ public class DbFields {
     public static final String EMAIL="email";
     public static final String KUDOS="kudos";
     public static final String NRO_KUDOS="nroKudos";
+    public static final String SEQ="seq";
 }

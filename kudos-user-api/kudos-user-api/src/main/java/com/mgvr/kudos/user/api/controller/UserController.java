@@ -50,8 +50,7 @@ public class UserController {
 	
 	@PutMapping(UserApiRoutes.PUT_USER)
 	public ResponseEntity<String> updateUser(@PathVariable String id, @RequestBody User user) {
-		service.updateUser(id, user);
-        return new ResponseEntity<>(ApiMessages.USER_UPDATED, HttpStatus.OK);
+        return new ResponseEntity<>(service.updateUser(id, user), HttpStatus.OK);
 	}
 	
 	@DeleteMapping(UserApiRoutes.DELETE_USER)

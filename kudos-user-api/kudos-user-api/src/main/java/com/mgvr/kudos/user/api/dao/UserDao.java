@@ -2,56 +2,46 @@ package com.mgvr.kudos.user.api.dao;
 
 import java.util.List;
 
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
-
+import com.mgvr.kudos.user.api.constants.ApiMessages;
 import com.mgvr.kudos.user.api.constants.DbFields;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.query.Query;
+import com.mgvr.kudos.user.api.model.DatabaseSequence;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.mgvr.kudos.user.api.model.User;
 
 @Repository
-@Transactional
 public class UserDao {
 	@Autowired
-	private SessionFactory factory;
+	private MongoTemplate mongoTemplate;
 	
 	public void saveUser(User user) {
-		user.setId((int)getSession().save(user));
-		getSession().update(user);
+		long sequence = getNextSequence();
+		user.setId(sequence);
+		mongoTemplate.save(user);
 	}
 	
 
 	public List<User> getAllUsers() {
-		CriteriaBuilder cb = getSession().getCriteriaBuilder();
-		CriteriaQuery<User> cq = cb.createQuery(User.class);
-		Root<User> rootEntry = cq.from(User.class);
-		CriteriaQuery<User> all = cq.select(rootEntry);
-		TypedQuery<User> allQuery = getSession().createQuery(all);
-		return allQuery.getResultList();
+		return mongoTemplate.findAll(User.class);
 	}
 	
-	public User getUser(int id) {
-		User user = (User) getSession().get(User.class, id);
-		return user;
+	public User getUserById(long id) {
+		Query query = new Query();
+		query.addCriteria(Criteria.where(DbFields.ID).is(id));
+		return mongoTemplate.findOne(query, User.class);
 	}
 
 	public User getUserByRealName(String realName){
-		CriteriaBuilder builder = getSession().getCriteriaBuilder();
-		CriteriaQuery<User> criteria = builder.createQuery(User.class);
-		Root<User> root = criteria.from(User.class);
-		criteria.select(root).where(builder.equal(root.get(DbFields.REAL_NAME),realName));
-		Query<User> userQuery = getSession().createQuery(criteria);
+		Query query = new Query();
+		query.addCriteria(Criteria.where(DbFields.REAL_NAME).is(realName));
 		User user;
 		try{
-			 user = userQuery.getSingleResult();
+			 user = mongoTemplate.findOne(query, User.class);
 		}
 		catch (Exception e){
 			return null;
@@ -60,14 +50,11 @@ public class UserDao {
 	}
 
 	public User getUserByNickName(String nickName){
-		CriteriaBuilder builder = getSession().getCriteriaBuilder();
-		CriteriaQuery<User> criteria = builder.createQuery(User.class);
-		Root<User> root = criteria.from(User.class);
-		criteria.select(root).where(builder.equal(root.get(DbFields.NICK_NAME),nickName));
-		Query<User> userQuery = getSession().createQuery(criteria);
+		Query query = new Query();
+		query.addCriteria(Criteria.where(DbFields.NICK_NAME).is(nickName));
 		User user;
 		try{
-			user = userQuery.getSingleResult();
+			user = mongoTemplate.findOne(query, User.class);
 		}
 		catch (Exception e){
 			return null;
@@ -75,20 +62,35 @@ public class UserDao {
 		return user;
 	}
 	
-	public void updateUser(User user) {
-		getSession().update(user);
+	public String updateUser(User user) {
+		if(getUserById(user.getId())!=null){
+			mongoTemplate.save(user);
+			return ApiMessages.USER_UPDATED;
+		}
+		return ApiMessages.USER_NOT_UPDATED;
 	}
 	
 	public void deleteUser(User user) {
-		getSession().delete(user);
+		mongoTemplate.remove(user);
 	}
-	
-	private Session getSession() {
-		Session session = factory.getCurrentSession();
-		if (session == null) {
-			session = factory.openSession();
+
+	public long getNextSequence()
+	{
+		DatabaseSequence seq = mongoTemplate.findById("1", DatabaseSequence.class);
+		if(seq==null) {
+			seq = new DatabaseSequence();
+			seq.setId("1");
+			seq.setSeq(1);
+			mongoTemplate.save(seq);
+		} else {
+			org.springframework.data.mongodb.core.query.Query query =
+					new org.springframework.data.mongodb.core.query.Query();
+			query.addCriteria(Criteria.where(DbFields.ID).is("1"));
+			Update update = new Update();
+			update.set(DbFields.SEQ, seq.getSeq()+1);
+			mongoTemplate.updateFirst(query, update,DatabaseSequence.class );
 		}
-		return session;
+		return seq.getSeq();
 	}
 
 

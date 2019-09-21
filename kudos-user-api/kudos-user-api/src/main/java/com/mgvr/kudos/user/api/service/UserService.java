@@ -50,7 +50,7 @@ public class UserService {
         User user=null;
         switch (field) {
             case DbFields.ID:
-                user = dao.getUser(Integer.parseInt(value));
+                user = dao.getUserById(Integer.parseInt(value));
                 break;
             case DbFields.REAL_NAME:
                 user = dao.getUserByRealName(value);
@@ -76,13 +76,13 @@ public class UserService {
                 )).returnValue();
     }
 
-    public void updateUser(String id, User user){
+    public String  updateUser(String id, User user){
         user.setId(Integer.parseInt(id));
-        dao.updateUser(user);
+        return dao.updateUser(user);
     }
 
     public boolean deleteUser(String id){
-        User user = dao.getUser(Integer.parseInt(id));
+        User user = dao.getUserById(Integer.parseInt(id));
         String responseDeleteKudos = (String)rabbitTemplate.convertSendAndReceive
                 (RabbitmqExchangeName.EXCHANGE_NAME, RabbitmqRoutingKeys.KUDO_RPC_KUDO_DELETE_REQUEST, user);
         if(responseDeleteKudos.equalsIgnoreCase(ApiMessages.KUDOS_DELETED)){

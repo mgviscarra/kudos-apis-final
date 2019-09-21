@@ -26,7 +26,7 @@ public class Receiver {
 	public String receiveUserQueryRequest(User message) throws IOException {
 		System.out.println("[Receiver] ha recibido el mensaje \"" + message.getRealName() + '"');
         //User user = dao.getUserByRealName(message.getRealName());
-        User user = userService.getUserByField(DbFields.REAL_NAME, message.getRealName());
+        User user = userService.getUserByField(DbFields.NICK_NAME, message.getNickName());
         if(user!=null){
             ObjectMapper Obj = new ObjectMapper();
             String jsonStr = Obj.writeValueAsString(user);
