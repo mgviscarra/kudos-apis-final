@@ -5,7 +5,19 @@ import java.util.List;
 import com.mgvr.kudos.user.api.constants.ApiMessages;
 import com.mgvr.kudos.user.api.constants.DbFields;
 import com.mgvr.kudos.user.api.model.DatabaseSequence;
+import com.mgvr.kudos.user.api.model.EsUser;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.ElasticsearchClient;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.core.query.IndexQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -18,11 +30,25 @@ import com.mgvr.kudos.user.api.model.User;
 public class UserDao {
 	@Autowired
 	private MongoTemplate mongoTemplate;
+
+	@Value("${elasticsearch.index.name}")
+	private String indexName;
+
+	@Value("${elasticsearch.user.type}")
+	private String userTypeName;
+
+	@Autowired
+	private ElasticsearchTemplate esTemplate;
+
+	@Autowired
+	ElasticsearchOperations elasticsearchTemplate;
 	
 	public void saveUser(User user) {
 		long sequence = getNextSequence();
 		user.setId(sequence);
 		mongoTemplate.save(user);
+		indexUser(user);
+
 	}
 	
 
@@ -93,5 +119,26 @@ public class UserDao {
 		return seq.getSeq();
 	}
 
+	private void indexUser(User user){
+		IndexQuery userQuery = new IndexQuery();
+		userQuery.setIndexName(indexName);
+		userQuery.setType(userTypeName);
+		EsUser esUser = new EsUser();
+		esUser.setId(String.valueOf(user.getId()));
+		esUser.setNickName(user.getNickName());
+		esUser.setRealName(user.getRealName());
+		userQuery.setObject(esUser);
+		esTemplate.index(userQuery);
+	}
+
+	public EsUser getUserByIdElastic(String id){
+		SearchQuery searchQuery = new NativeSearchQueryBuilder()
+				.withFilter(QueryBuilders.matchQuery("id", id)).build();
+		List<EsUser> users = esTemplate.queryForList(searchQuery, EsUser.class);
+		if(!users.isEmpty()) {
+			return users.get(0);
+		}
+		return null;
+	}
 
 }

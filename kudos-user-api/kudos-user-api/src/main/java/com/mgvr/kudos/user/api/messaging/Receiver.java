@@ -1,6 +1,7 @@
 package com.mgvr.kudos.user.api.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mgvr.kudos.user.api.constants.ApiMessages;
 import com.mgvr.kudos.user.api.constants.DbFields;
 import com.mgvr.kudos.user.api.constants.RabbitmqQueueNames;
 import com.mgvr.kudos.user.api.model.User;
@@ -32,6 +33,6 @@ public class Receiver {
             String jsonStr = Obj.writeValueAsString(user);
             return jsonStr;
         }
-        return null;
+        return ApiMessages.USER_NOT_UPDATED;
     }
 }

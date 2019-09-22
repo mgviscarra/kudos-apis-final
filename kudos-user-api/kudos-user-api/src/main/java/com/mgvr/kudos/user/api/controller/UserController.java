@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.mgvr.kudos.user.api.constants.*;
+import com.mgvr.kudos.user.api.model.EsUser;
 import com.mgvr.kudos.user.api.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -59,5 +60,10 @@ public class UserController {
 			return new ResponseEntity<>(ApiMessages.USER_DELETED, HttpStatus.OK);
 		}
         return new ResponseEntity<>(ApiMessages.USER_NOT_DELETED, HttpStatus.CONFLICT);
+	}
+
+	@GetMapping("/esuser/{id}")
+	public EsUser getElasticUser(@PathVariable String id) throws IOException {
+		return service.getEsUserById(id);
 	}
 }
