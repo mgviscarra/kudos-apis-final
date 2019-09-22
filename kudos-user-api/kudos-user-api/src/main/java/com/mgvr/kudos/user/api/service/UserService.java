@@ -7,7 +7,6 @@ import com.mgvr.kudos.user.api.constants.RabbitmqExchangeName;
 import com.mgvr.kudos.user.api.constants.RabbitmqRoutingKeys;
 import com.mgvr.kudos.user.api.dao.UserDao;
 import com.mgvr.kudos.user.api.messaging.Sender;
-import com.mgvr.kudos.user.api.model.EsUser;
 import com.mgvr.kudos.user.api.model.Kudo;
 import com.mgvr.kudos.user.api.model.User;
 import com.monitorjbl.json.JsonResult;
@@ -93,7 +92,13 @@ public class UserService {
         return false;
     }
 
-    public EsUser getEsUserById(String id){
-        return dao.getUserByIdElastic(id);
+    public List<User> getUsersByFuzzyName(String realName){
+        List<User> users = dao.getUsersByFuzzyName(realName);
+        JsonResult json = JsonResult.instance();
+        List<User> listUsers= json.use(JsonView.with(users)
+                .onClass(User.class, Match.match()
+                        .exclude(DbFields.EMAIL)
+                )).returnValue();
+        return listUsers;
     }
 }

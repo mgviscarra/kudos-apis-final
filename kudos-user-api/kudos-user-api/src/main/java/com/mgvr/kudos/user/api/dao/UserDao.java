@@ -1,16 +1,14 @@
 package com.mgvr.kudos.user.api.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.mgvr.kudos.user.api.constants.ApiMessages;
 import com.mgvr.kudos.user.api.constants.DbFields;
 import com.mgvr.kudos.user.api.model.DatabaseSequence;
 import com.mgvr.kudos.user.api.model.EsUser;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.ElasticsearchClient;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.common.unit.Fuzziness;
+import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -25,6 +23,9 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 import com.mgvr.kudos.user.api.model.User;
+
+import static org.elasticsearch.index.query.Operator.AND;
+import static org.elasticsearch.index.query.QueryBuilders.multiMatchQuery;
 
 @Repository
 public class UserDao {
@@ -55,6 +56,16 @@ public class UserDao {
 	public List<User> getAllUsers() {
 		return mongoTemplate.findAll(User.class);
 	}
+
+	public List<User> getUsersByFuzzyName(String name){
+		List<EsUser> esUsers = getUsersEsByFuzzyName(name);
+		List<User> users = new ArrayList<>();
+		for (EsUser user: esUsers) {
+			users.add(getUserById(Long.parseLong(user.getId())));
+		}
+		return users;
+	}
+
 	
 	public User getUserById(long id) {
 		Query query = new Query();
@@ -91,6 +102,7 @@ public class UserDao {
 	public String updateUser(User user) {
 		if(getUserById(user.getId())!=null){
 			mongoTemplate.save(user);
+			indexUser(user);
 			return ApiMessages.USER_UPDATED;
 		}
 		return ApiMessages.USER_NOT_UPDATED;
@@ -98,6 +110,7 @@ public class UserDao {
 	
 	public void deleteUser(User user) {
 		mongoTemplate.remove(user);
+		esTemplate.delete(indexName, userTypeName, Long.toString(user.getId()));
 	}
 
 	public long getNextSequence()
@@ -131,14 +144,18 @@ public class UserDao {
 		esTemplate.index(userQuery);
 	}
 
-	public EsUser getUserByIdElastic(String id){
+
+	private List<EsUser> getUsersEsByFuzzyName(String name){
 		SearchQuery searchQuery = new NativeSearchQueryBuilder()
-				.withFilter(QueryBuilders.matchQuery("id", id)).build();
-		List<EsUser> users = esTemplate.queryForList(searchQuery, EsUser.class);
-		if(!users.isEmpty()) {
-			return users.get(0);
-		}
-		return null;
+				.withQuery(multiMatchQuery(name)
+						.field(DbFields.REAL_NAME)
+						.field(DbFields.NICK_NAME)
+						.type(MultiMatchQueryBuilder.Type.BEST_FIELDS)
+						.operator(AND)
+						.fuzziness(Fuzziness.TWO)
+						.prefixLength(0))
+				.build();
+		return esTemplate.queryForList(searchQuery, EsUser.class);
 	}
 
 }
