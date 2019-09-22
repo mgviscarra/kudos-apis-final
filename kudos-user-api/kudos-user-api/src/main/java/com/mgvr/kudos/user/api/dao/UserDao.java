@@ -9,17 +9,15 @@ import com.mgvr.kudos.user.api.constants.ApiParameters;
 import com.mgvr.kudos.user.api.constants.DbFields;
 import com.mgvr.kudos.user.api.model.DatabaseSequence;
 import com.mgvr.kudos.user.api.model.EsUser;
-import com.mgvr.kudos.user.api.repository.EsUserRepository;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
-import org.elasticsearch.index.search.MatchQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -38,6 +36,12 @@ public class UserDao {
 	@Autowired
 	private MongoTemplate mongoTemplate;
 
+	@Autowired
+	private Environment env;
+
+	//private String influxDb=env.getProperty("test.prop");
+	@Value("${management.metrics.export.influx.uri}")
+	private String influxUri;
 	@Value("${elasticsearch.index.name}")
 	private String indexName;
 

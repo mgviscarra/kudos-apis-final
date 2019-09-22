@@ -3,10 +3,13 @@ package com.mgvr.kudos.user.api.controller;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import com.mgvr.kudos.user.api.config.InfluxDb;
 import com.mgvr.kudos.user.api.constants.*;
 import com.mgvr.kudos.user.api.model.UserSearch;
 import com.mgvr.kudos.user.api.service.UserService;
+import org.influxdb.dto.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,11 +27,17 @@ public class UserController {
     @Autowired
 	UserService service;
 
+    @Autowired
+    InfluxDb influxDb;
+
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
 	@PostMapping(UserApiRoutes.POST_USER)
 	public ResponseEntity<String> saveUser(@RequestBody User user) {
 		service.addUser(user);
+        logger.info("Processing POST USER method: " +UserApiRoutes.POST_USER);
+        influxDb.getInstance().write(Point.measurement(Influx.API_REQUESTS_POINT_MEASUREMENT).time(System.currentTimeMillis(),
+                TimeUnit.MILLISECONDS).addField(Influx.API_REQUESTS_CREATE_EVENT,"CREATED USER: "+user.getNickName()).build());
         return new ResponseEntity<>(ApiMessages.USER_CREATED, HttpStatus.OK);
 	}
 
@@ -37,6 +46,8 @@ public class UserController {
 	    try{
             List<User> listUsers = service.getUsers(user, pagination);
             logger.info("Processing GET USERS method: " +UserApiRoutes.GET_USERS);
+            influxDb.getInstance().write(Point.measurement(Influx.API_REQUESTS_POINT_MEASUREMENT).time(System.currentTimeMillis(),
+                    TimeUnit.MILLISECONDS).addField(Influx.API_REQUESTS_GET_EVENT,"GET USER: "+user.getUserNames()).build());
             return new ResponseEntity<>(listUsers, HttpStatus.OK);
         } catch (Exception e){
             logger.error("Error in GET USERS method: " +UserApiRoutes.GET_USERS);
@@ -57,6 +68,8 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
         logger.info("Processing GET USERS method: " +UserApiRoutes.GET_USER);
+        influxDb.getInstance().write(Point.measurement(Influx.API_REQUESTS_POINT_MEASUREMENT).time(System.currentTimeMillis(),
+                TimeUnit.MILLISECONDS).addField(Influx.API_REQUESTS_GET_EVENT,"GET ALL USERS").build());
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
@@ -64,6 +77,8 @@ public class UserController {
 	@PutMapping(UserApiRoutes.PUT_USER)
 	public ResponseEntity<String> updateUser(@PathVariable String id, @RequestBody User user) {
         logger.info("Processing PUT USER method: " +UserApiRoutes.PUT_USER);
+        influxDb.getInstance().write(Point.measurement(Influx.API_REQUESTS_POINT_MEASUREMENT).time(System.currentTimeMillis(),
+                TimeUnit.MILLISECONDS).addField(Influx.API_REQUESTS_UPDATE_EVENT,"PUT USER: "+user.getNickName()).build());
         return new ResponseEntity<>(service.updateUser(id, user), HttpStatus.OK);
 	}
 	
@@ -71,6 +86,8 @@ public class UserController {
 	public ResponseEntity<String> deleteUser(@PathVariable String id) {
 		if(service.deleteUser(id)){
             logger.info("Processing DELETE USER method: " +UserApiRoutes.DELETE_USER);
+            influxDb.getInstance().write(Point.measurement(Influx.API_REQUESTS_POINT_MEASUREMENT).time(System.currentTimeMillis(),
+                    TimeUnit.MILLISECONDS).addField(Influx.API_REQUESTS_DELETE_EVENT,"DELETE USER: "+id).build());
 			return new ResponseEntity<>(ApiMessages.USER_DELETED, HttpStatus.OK);
 		}
         logger.error("Error in DELETE USER method: " +UserApiRoutes.DELETE_USER);
