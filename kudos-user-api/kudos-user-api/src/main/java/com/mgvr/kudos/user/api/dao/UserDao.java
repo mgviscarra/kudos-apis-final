@@ -2,18 +2,24 @@ package com.mgvr.kudos.user.api.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.mgvr.kudos.user.api.constants.ApiMessages;
+import com.mgvr.kudos.user.api.constants.ApiParameters;
 import com.mgvr.kudos.user.api.constants.DbFields;
 import com.mgvr.kudos.user.api.model.DatabaseSequence;
 import com.mgvr.kudos.user.api.model.EsUser;
+import com.mgvr.kudos.user.api.repository.EsUserRepository;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
+import org.elasticsearch.index.search.MatchQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -51,14 +57,30 @@ public class UserDao {
 		indexUser(user);
 
 	}
-	
 
-	public List<User> getAllUsers() {
-		return mongoTemplate.findAll(User.class);
+	public List<User> getAllUsers(Map<String,String> pagination) {
+		int size = 100;
+		int page = 0;
+		if (pagination.size()!=0){
+			size = Integer.parseInt(pagination.get(ApiParameters.SIZE));
+			page = Integer.parseInt(pagination.get(ApiParameters.PAGE));
+		}
+		List<EsUser> esUsers = getAllEsUsers(page,size);
+		List<User> users = new ArrayList<>();
+		for (EsUser user: esUsers) {
+			users.add(getUserById(Long.parseLong(user.getId())));
+		}
+		return users;
 	}
 
-	public List<User> getUsersByFuzzyName(String name){
-		List<EsUser> esUsers = getUsersEsByFuzzyName(name);
+	public List<User> getUsersByFuzzyName(String name, Map<String, String> pagination){
+		int size = 100;
+		int page = 0;
+		if (pagination.size()!=0){
+			size = Integer.parseInt(pagination.get(ApiParameters.SIZE));
+			page = Integer.parseInt(pagination.get(ApiParameters.PAGE));
+		}
+		List<EsUser> esUsers = getUsersEsByFuzzyName(name,page,size);
 		List<User> users = new ArrayList<>();
 		for (EsUser user: esUsers) {
 			users.add(getUserById(Long.parseLong(user.getId())));
@@ -144,8 +166,7 @@ public class UserDao {
 		esTemplate.index(userQuery);
 	}
 
-
-	private List<EsUser> getUsersEsByFuzzyName(String name){
+	private List<EsUser> getUsersEsByFuzzyName(String name, int page, int size){
 		SearchQuery searchQuery = new NativeSearchQueryBuilder()
 				.withQuery(multiMatchQuery(name)
 						.field(DbFields.REAL_NAME)
@@ -153,9 +174,15 @@ public class UserDao {
 						.type(MultiMatchQueryBuilder.Type.BEST_FIELDS)
 						.operator(AND)
 						.fuzziness(Fuzziness.TWO)
-						.prefixLength(0))
+						.prefixLength(0)).withPageable(new PageRequest(page-1, size))
 				.build();
 		return esTemplate.queryForList(searchQuery, EsUser.class);
 	}
 
+	private List<EsUser> getAllEsUsers(int page, int size){
+		SearchQuery searchQuery = new NativeSearchQueryBuilder()
+				.withPageable(new PageRequest(page-1, size))
+				.build();
+		return esTemplate.queryForList(searchQuery, EsUser.class);
+	}
 }

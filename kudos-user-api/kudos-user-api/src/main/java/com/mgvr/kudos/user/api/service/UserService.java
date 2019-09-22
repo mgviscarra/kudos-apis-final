@@ -9,6 +9,7 @@ import com.mgvr.kudos.user.api.dao.UserDao;
 import com.mgvr.kudos.user.api.messaging.Sender;
 import com.mgvr.kudos.user.api.model.Kudo;
 import com.mgvr.kudos.user.api.model.User;
+import com.mgvr.kudos.user.api.model.UserSearch;
 import com.monitorjbl.json.JsonResult;
 import com.monitorjbl.json.JsonView;
 import com.monitorjbl.json.Match;
@@ -16,8 +17,11 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.jws.soap.SOAPBinding;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class UserService {
@@ -34,8 +38,14 @@ public class UserService {
         dao.saveUser(user);
     }
 
-    public List<User> getUsers(){
-        List<User> users = dao.getAllUsers();
+    public List<User> getUsers(UserSearch user, Map<String, String> pagination){
+        List<User> users = new ArrayList<>();
+        if(user==null){
+            users = dao.getAllUsers(pagination);
+        }
+        else{
+            users = dao.getUsersByFuzzyName(user.getUserNames(),pagination);
+        }
         JsonResult json = JsonResult.instance();
         List<User> listUsers= json.use(JsonView.with(users)
                 .onClass(User.class, Match.match()
@@ -92,8 +102,8 @@ public class UserService {
         return false;
     }
 
-    public List<User> getUsersByFuzzyName(String realName){
-        List<User> users = dao.getUsersByFuzzyName(realName);
+    public List<User> getUsersByFuzzyName(String realName, Map<String,String> pagination){
+        List<User> users = dao.getUsersByFuzzyName(realName, pagination);
         JsonResult json = JsonResult.instance();
         List<User> listUsers= json.use(JsonView.with(users)
                 .onClass(User.class, Match.match()

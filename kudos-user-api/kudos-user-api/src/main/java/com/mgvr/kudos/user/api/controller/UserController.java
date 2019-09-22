@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.mgvr.kudos.user.api.constants.*;
+import com.mgvr.kudos.user.api.model.UserSearch;
 import com.mgvr.kudos.user.api.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,14 +29,13 @@ public class UserController {
 	}
 
 	@GetMapping(UserApiRoutes.GET_USERS)
-	public ResponseEntity<List<User>> getAllUsers() {
-		List<User> listUsers = service.getUsers();
-        return new ResponseEntity<>(listUsers, HttpStatus.OK);
-	}
-
-	@GetMapping(UserApiRoutes.GET_USERS_BY_NAME)
-	public ResponseEntity<List<User>> getUsersByFuzzyName(@PathVariable String name) {
-		return new ResponseEntity<>(service.getUsersByFuzzyName(name), HttpStatus.OK);
+	public ResponseEntity<?> getAllUsers(@RequestParam Map<String,String> pagination,@RequestBody(required=false)  UserSearch user) {
+	    try{
+            List<User> listUsers = service.getUsers(user, pagination);
+            return new ResponseEntity<>(listUsers, HttpStatus.OK);
+        } catch (Exception e){
+            return new ResponseEntity<>(ApiMessages.GET_USERS_ERROR, HttpStatus.OK);
+        }
 	}
 	
 	@GetMapping(UserApiRoutes.GET_USER)
