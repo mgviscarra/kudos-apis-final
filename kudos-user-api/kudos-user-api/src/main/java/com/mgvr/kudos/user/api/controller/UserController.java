@@ -7,6 +7,8 @@ import java.util.Map;
 import com.mgvr.kudos.user.api.constants.*;
 import com.mgvr.kudos.user.api.model.UserSearch;
 import com.mgvr.kudos.user.api.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,8 @@ public class UserController {
     @Autowired
 	UserService service;
 
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+
 	@PostMapping(UserApiRoutes.POST_USER)
 	public ResponseEntity<String> saveUser(@RequestBody User user) {
 		service.addUser(user);
@@ -32,8 +36,10 @@ public class UserController {
 	public ResponseEntity<?> getAllUsers(@RequestParam Map<String,String> pagination,@RequestBody(required=false)  UserSearch user) {
 	    try{
             List<User> listUsers = service.getUsers(user, pagination);
+            logger.info("Processing GET USERS method: " +UserApiRoutes.GET_USERS);
             return new ResponseEntity<>(listUsers, HttpStatus.OK);
         } catch (Exception e){
+            logger.error("Error in GET USERS method: " +UserApiRoutes.GET_USERS);
             return new ResponseEntity<>(ApiMessages.GET_USERS_ERROR, HttpStatus.OK);
         }
 	}
@@ -47,22 +53,27 @@ public class UserController {
         String value = allParams.get(field);
         User user= service.getUserByField(field,value);
         if(user==null){
+            logger.error("Error in GET USER method: " +UserApiRoutes.GET_USER);
             return ResponseEntity.notFound().build();
         }
+        logger.info("Processing GET USERS method: " +UserApiRoutes.GET_USER);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
 	
 	@PutMapping(UserApiRoutes.PUT_USER)
 	public ResponseEntity<String> updateUser(@PathVariable String id, @RequestBody User user) {
+        logger.info("Processing PUT USER method: " +UserApiRoutes.PUT_USER);
         return new ResponseEntity<>(service.updateUser(id, user), HttpStatus.OK);
 	}
 	
 	@DeleteMapping(UserApiRoutes.DELETE_USER)
 	public ResponseEntity<String> deleteUser(@PathVariable String id) {
 		if(service.deleteUser(id)){
+            logger.info("Processing DELETE USER method: " +UserApiRoutes.DELETE_USER);
 			return new ResponseEntity<>(ApiMessages.USER_DELETED, HttpStatus.OK);
 		}
+        logger.error("Error in DELETE USER method: " +UserApiRoutes.DELETE_USER);
         return new ResponseEntity<>(ApiMessages.USER_NOT_DELETED, HttpStatus.CONFLICT);
 	}
 }
