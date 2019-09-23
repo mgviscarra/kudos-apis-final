@@ -25,7 +25,7 @@ public class Receiver {
 	@RabbitListener(queues =RabbitmqQueueNames.KUDO_RPC_USER_REQUEST)
     @SendTo(RabbitmqQueueNames.KUDO_RPC_KUDO_API)
 	public String receiveUserQueryRequest(User message) throws IOException {
-		System.out.println("[Receiver] ha recibido el mensaje \"" + message.getRealName() + '"');
+		System.out.println("[Receiver] ha recibido el mensaje \"" + message.getNickName() + '"');
         //User user = dao.getUserByRealName(message.getRealName());
         User user = userService.getUserByField(DbFields.NICK_NAME, message.getNickName());
         if(user!=null){
@@ -33,6 +33,6 @@ public class Receiver {
             String jsonStr = Obj.writeValueAsString(user);
             return jsonStr;
         }
-        return ApiMessages.USER_NOT_UPDATED;
+        return ApiMessages.USERS_DONT_EXIST;
     }
 }

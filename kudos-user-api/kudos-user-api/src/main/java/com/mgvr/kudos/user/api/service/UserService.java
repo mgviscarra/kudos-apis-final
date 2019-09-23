@@ -49,7 +49,6 @@ public class UserService {
         JsonResult json = JsonResult.instance();
         List<User> listUsers= json.use(JsonView.with(users)
                 .onClass(User.class, Match.match()
-                        .exclude(DbFields.REAL_NAME)
                         .exclude(DbFields.EMAIL)
                         .exclude(DbFields.KUDOS)
                 )).returnValue();
@@ -91,6 +90,10 @@ public class UserService {
         return dao.updateUser(user);
     }
 
+    public String updateUserStats(User user){
+        return dao.updateUserStats(user);
+    }
+
     public boolean deleteUser(String id){
         User user = dao.getUserById(Integer.parseInt(id));
         String responseDeleteKudos = (String)rabbitTemplate.convertSendAndReceive
@@ -100,15 +103,5 @@ public class UserService {
             return true;
         }
         return false;
-    }
-
-    public List<User> getUsersByFuzzyName(String realName, Map<String,String> pagination){
-        List<User> users = dao.getUsersByFuzzyName(realName, pagination);
-        JsonResult json = JsonResult.instance();
-        List<User> listUsers= json.use(JsonView.with(users)
-                .onClass(User.class, Match.match()
-                        .exclude(DbFields.EMAIL)
-                )).returnValue();
-        return listUsers;
     }
 }

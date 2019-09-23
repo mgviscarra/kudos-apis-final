@@ -64,7 +64,7 @@ public class UserDao {
 
 	public List<User> getAllUsers(Map<String,String> pagination) {
 		int size = 100;
-		int page = 0;
+		int page = 1;
 		if (pagination.size()!=0){
 			size = Integer.parseInt(pagination.get(ApiParameters.SIZE));
 			page = Integer.parseInt(pagination.get(ApiParameters.PAGE));
@@ -79,7 +79,7 @@ public class UserDao {
 
 	public List<User> getUsersByFuzzyName(String name, Map<String, String> pagination){
 		int size = 100;
-		int page = 0;
+		int page = 1;
 		if (pagination.size()!=0){
 			size = Integer.parseInt(pagination.get(ApiParameters.SIZE));
 			page = Integer.parseInt(pagination.get(ApiParameters.PAGE));
@@ -131,6 +131,13 @@ public class UserDao {
 			indexUser(user);
 			return ApiMessages.USER_UPDATED;
 		}
+		return ApiMessages.USER_NOT_UPDATED;
+	}
+
+	public String updateUserStats(User userToUpdate){
+		User user = getUserByNickName(userToUpdate.getNickName());
+		user.setNroKudos(userToUpdate.getNroKudos());
+		mongoTemplate.save(user);
 		return ApiMessages.USER_NOT_UPDATED;
 	}
 	

@@ -7,7 +7,7 @@ public class ApiMessages {
     public static final String USER_NOT_DELETED="USER COULD NOT BE DELETED!";
     public static final String USER_NOT_UPDATED="USER COULD NOT BE UPDATED!";
     public static final String KUDOS_DELETED="KUDO DELETED!";
-    public static final String KUDOS_NOT_CREATED="KUDO NOT CREATED";
+    public static final String USERS_DONT_EXIST="SOME OF THE USERS PROVIDED ARE NOT REGISTERED";
     public static final String GET_USERS_ERROR="THERE WAS EN ERROR RETRIEVING THE USERS";
     public static final String GET_USER_REQUIRED_PARAMETERS="YOU MUST SUPPLY ONE OF THE FOLLOWING PARAMETERS: id, realname, nickName";
 }

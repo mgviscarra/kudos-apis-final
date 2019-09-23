@@ -7,5 +7,6 @@ public class UserApiRoutes {
     public static final String GET_USER="/user";
     public static final String PUT_USER="/user/{id}";
     public static final String DELETE_USER="/user/{id}";
+    public static final String PUT_USER_STATS="/user/stats";
 
 }

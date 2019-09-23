@@ -36,8 +36,9 @@ public class UserController {
 	public ResponseEntity<String> saveUser(@RequestBody User user) {
 		service.addUser(user);
         logger.info("Processing POST USER method: " +UserApiRoutes.POST_USER);
+        logger.info("CREATED USER: " +user.getId());
         influxDb.getInstance().write(Point.measurement(Influx.API_REQUESTS_POINT_MEASUREMENT).time(System.currentTimeMillis(),
-                TimeUnit.MILLISECONDS).addField(Influx.API_REQUESTS_CREATE_EVENT,"CREATED USER: "+user.getNickName()).build());
+                TimeUnit.MILLISECONDS).addField(Influx.API_REQUESTS_CREATE_EVENT,"CREATED USER: "+user.getId()).build());
         return new ResponseEntity<>(ApiMessages.USER_CREATED, HttpStatus.OK);
 	}
 
@@ -47,7 +48,7 @@ public class UserController {
             List<User> listUsers = service.getUsers(user, pagination);
             logger.info("Processing GET USERS method: " +UserApiRoutes.GET_USERS);
             influxDb.getInstance().write(Point.measurement(Influx.API_REQUESTS_POINT_MEASUREMENT).time(System.currentTimeMillis(),
-                    TimeUnit.MILLISECONDS).addField(Influx.API_REQUESTS_GET_EVENT,"GET USER: "+user.getUserNames()).build());
+                    TimeUnit.MILLISECONDS).addField(Influx.API_REQUESTS_GET_EVENT,"GET USERS").build());
             return new ResponseEntity<>(listUsers, HttpStatus.OK);
         } catch (Exception e){
             logger.error("Error in GET USERS method: " +UserApiRoutes.GET_USERS);
@@ -77,15 +78,26 @@ public class UserController {
 	@PutMapping(UserApiRoutes.PUT_USER)
 	public ResponseEntity<String> updateUser(@PathVariable String id, @RequestBody User user) {
         logger.info("Processing PUT USER method: " +UserApiRoutes.PUT_USER);
+        logger.info("UPDATED USER " +user.getId());
         influxDb.getInstance().write(Point.measurement(Influx.API_REQUESTS_POINT_MEASUREMENT).time(System.currentTimeMillis(),
-                TimeUnit.MILLISECONDS).addField(Influx.API_REQUESTS_UPDATE_EVENT,"PUT USER: "+user.getNickName()).build());
+                TimeUnit.MILLISECONDS).addField(Influx.API_REQUESTS_UPDATE_EVENT,"PUT USER: "+user.getId()).build());
         return new ResponseEntity<>(service.updateUser(id, user), HttpStatus.OK);
 	}
+
+    @PutMapping(UserApiRoutes.PUT_USER_STATS)
+    public ResponseEntity<String> updateUserStats(@RequestBody User user) {
+        logger.info("Processing PUT USER STATS method: " +UserApiRoutes.PUT_USER_STATS);
+        logger.info("UPDATED USER " +user.getId());
+        influxDb.getInstance().write(Point.measurement(Influx.API_REQUESTS_POINT_MEASUREMENT).time(System.currentTimeMillis(),
+                TimeUnit.MILLISECONDS).addField(Influx.API_REQUESTS_UPDATE_EVENT,"PUT USER: "+user.getNickName()).build());
+        return new ResponseEntity<>(service.updateUserStats(user), HttpStatus.OK);
+    }
 	
 	@DeleteMapping(UserApiRoutes.DELETE_USER)
 	public ResponseEntity<String> deleteUser(@PathVariable String id) {
 		if(service.deleteUser(id)){
             logger.info("Processing DELETE USER method: " +UserApiRoutes.DELETE_USER);
+            logger.info("DELETED USER " +id);
             influxDb.getInstance().write(Point.measurement(Influx.API_REQUESTS_POINT_MEASUREMENT).time(System.currentTimeMillis(),
                     TimeUnit.MILLISECONDS).addField(Influx.API_REQUESTS_DELETE_EVENT,"DELETE USER: "+id).build());
 			return new ResponseEntity<>(ApiMessages.USER_DELETED, HttpStatus.OK);
